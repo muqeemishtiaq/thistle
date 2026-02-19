@@ -6,8 +6,8 @@ import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 import ServiceDetailPage from './pages/ServiceDetailPage';
 import HelpPage from './pages/HelpPage';
-import ContactPage from './pages/ContactPage';
-import OrderPage from './pages/OrderPage';
+import Contact from './pages/Contact';
+import Order from './pages/Order';
 import './App.css';
 
 const AppContent = () => {
@@ -37,8 +37,8 @@ const AppContent = () => {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/services/:serviceName" element={<ServiceDetailPage />} />
         <Route path="/help" element={<HelpPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/order" element={<OrderPage />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/order" element={<Order />} />
       </Routes>
     </div>
   );
