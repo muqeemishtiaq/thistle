@@ -1,8 +1,0 @@
-src
-public
-node_modules
-.git
-npm-debug.log
-yarn-error.log
-
-
