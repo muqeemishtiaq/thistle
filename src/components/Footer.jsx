@@ -80,13 +80,13 @@ const Footer = () => {
             <div>
               <h4 className="text-lg font-semibold text-white mb-4">Follow Us</h4>
               <div className="flex gap-4">
-                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-800 rounded-lg hover:bg-teal-600 transition-colors group">
+                <a href="https://www.facebook.com/profile.php?id=61586867490482" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-800 rounded-lg hover:bg-teal-600 transition-colors group">
                   <Facebook className="w-5 h-5 group-hover:text-white" />
                 </a>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-800 rounded-lg hover:bg-teal-600 transition-colors group">
+                <a href="https://www.instagram.com/thistleprimecleaning/" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-800 rounded-lg hover:bg-teal-600 transition-colors group">
                   <Instagram className="w-5 h-5 group-hover:text-white" />
                 </a>
-                <a href="https://wa.me/447440620492" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-800 rounded-lg hover:bg-teal-600 transition-colors group">
+                <a href="https://wa.me/+447440620492" target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-800 rounded-lg hover:bg-teal-600 transition-colors group">
                   <MessageCircle className="w-5 h-5 group-hover:text-white" />
                 </a>
               </div>

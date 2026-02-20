@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Phone, Mail, MapPin, Clock, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import emailjs from 'emailjs-com';
+
+// Initialize EmailJS - Replace with your actual Public Key from EmailJS
+const EMAILJS_PUBLIC_KEY = 'q6AlmW8UNfBiLaHXm';
+const EMAILJS_SERVICE_ID = 'service_ohpcbkf';
+const EMAILJS_CONTACT_TEMPLATE_ID = 'template_xa949yt';
+
+// Initialize emailjs on first load
+emailjs.init(EMAILJS_PUBLIC_KEY);
 
 const Contact = () => {
   const [visibleElements, setVisibleElements] = useState({});
@@ -39,43 +48,48 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form
+    if (!formData.name || !formData.email || !formData.message) {
+      setErrorMessage('Please fill in all required fields.');
+      return;
+    }
+
     setLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
 
     try {
-      const response = await fetch('https://formspree.io/f/xnjbzely', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          service: formData.service,
-          message: formData.message,
-          _redirect: false,
-        }),
-      });
+      // Prepare email template variables
+      const templateParams = {
+        to_email: formData.email,
+        customer_name: formData.name,
+        customer_email: formData.email,
+        customer_phone: formData.phone || 'Not provided',
+        customer_message: `Service: ${formData.service || 'General inquiry'}\n\n${formData.message}`,
+      };
 
-      if (response.ok) {
-        setSuccessMessage('✅ Message sent successfully! We will get back to you shortly.');
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          service: '',
-          message: ''
-        });
-        setTimeout(() => {
-          setSuccessMessage('');
-        }, 5000);
-      } else {
-        setErrorMessage('Failed to send message. Please try again or call us directly.');
-      }
+      // Send email
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_CONTACT_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_PUBLIC_KEY
+      );
+
+      setSuccessMessage('✅ Message sent! We will contact you within 24 hours at ' + formData.phone);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        service: '',
+        message: ''
+      });
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
     } catch (error) {
+      console.error('Email send failed:', error);
       setErrorMessage('Error sending message. Please call us at +44 7440 620492.');
     } finally {
       setLoading(false);
@@ -197,7 +211,6 @@ const Contact = () => {
                   name="service"
                   value={formData.service}
                   onChange={handleChange}
-                  size={7}
                   className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white cursor-pointer"
                 >
                   <option value="">-- Select a Service --</option>
@@ -251,50 +264,48 @@ const Contact = () => {
               transitionDelay: '100ms',
             }}
           >
-            <h2 className="text-3xl font-bold mb-8 text-slate-900">Contact Information</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-8 text-slate-900">Contact Information</h2>
 
-            <div className="space-y-6">
-              <a href="tel:+447440620492" className="p-6 bg-slate-50 rounded-lg hover:bg-teal-50 transition-colors border border-slate-200 hover:border-teal-300">
-                <div className="flex gap-4">
-                  <Phone className="w-6 h-6 text-teal-600 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-bold text-slate-900 mb-1">Phone</h3>
-                    <p className="text-slate-600">+44 7440 620492</p>
-                    <p className="text-sm text-slate-500 mt-1">Monday - Friday, 8am - 6pm</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <a href="tel:+447440620492" className="p-4 md:p-6 bg-slate-50 rounded-lg hover:bg-teal-50 transition-colors border border-slate-200 hover:border-teal-300">
+                <div className="flex gap-3 md:gap-4">
+                  <Phone className="w-5 md:w-6 h-5 md:h-6 text-teal-600 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-slate-900 mb-1 text-base md:text-lg">Phone</h3>
+                    <p className="text-sm md:text-base text-slate-600 break-all">+44 7440 620492</p>
+                    <p className="text-xs md:text-sm text-slate-500 mt-1">Available 24/7</p>
                   </div>
                 </div>
               </a>
 
-              <a href="mailto:thistleprimecleaning@gmail.com" className="p-6 bg-slate-50 rounded-lg hover:bg-teal-50 transition-colors border border-slate-200 hover:border-teal-300">
-                <div className="flex gap-4">
-                  <Mail className="w-6 h-6 text-teal-600 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-bold text-slate-900 mb-1">Email</h3>
-                    <p className="text-slate-600">thistleprimecleaning@gmail.com</p>
-                    <p className="text-sm text-slate-500 mt-1">Response within 2 hours</p>
+              <a href="mailto:thistleprimecleaning@gmail.com" className="p-4 md:p-6 bg-slate-50 rounded-lg hover:bg-teal-50 transition-colors border border-slate-200 hover:border-teal-300">
+                <div className="flex gap-3 md:gap-4">
+                  <Mail className="w-5 md:w-6 h-5 md:h-6 text-teal-600 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-slate-900 mb-1 text-base md:text-lg">Email</h3>
+                    <p className="text-sm md:text-base text-slate-600 break-all">thistleprimecleaning@gmail.com</p>
+                    <p className="text-xs md:text-sm text-slate-500 mt-1">Response within 1 hour</p>
                   </div>
                 </div>
               </a>
 
-              <a href="https://maps.google.com/?q=17-2+Murdoch+Terrace,+Edinburgh+EH11+1BD" target="_blank" rel="noopener noreferrer" className="p-6 bg-slate-50 rounded-lg hover:bg-teal-50 transition-colors border border-slate-200 hover:border-teal-300">
-                <div className="flex gap-4">
-                  <MapPin className="w-6 h-6 text-teal-600 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-bold text-slate-900 mb-1">Address</h3>
-                    <p className="text-slate-600">17-2 Murdoch Terrace</p>
-                    <p className="text-slate-600">Edinburgh EH11 1BD</p>
+              <a href="https://maps.google.com/?q=17-2+Murdoch+Terrace,+Edinburgh+EH11+1BD" target="_blank" rel="noopener noreferrer" className="p-4 md:p-6 bg-slate-50 rounded-lg hover:bg-teal-50 transition-colors border border-slate-200 hover:border-teal-300 md:col-span-2">
+                <div className="flex gap-3 md:gap-4">
+                  <MapPin className="w-5 md:w-6 h-5 md:h-6 text-teal-600 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-slate-900 mb-1 text-base md:text-lg">Address</h3>
+                    <p className="text-sm md:text-base text-slate-600">17-2 Murdoch Terrace</p>
+                    <p className="text-sm md:text-base text-slate-600">Edinburgh EH11 1BD</p>
                   </div>
                 </div>
               </a>
 
-              <div className="p-6 bg-teal-50 rounded-lg border border-teal-200">
-                <div className="flex gap-4">
-                  <Clock className="w-6 h-6 text-teal-600 flex-shrink-0" />
+              <div className="p-4 md:p-6 bg-teal-50 rounded-lg border border-teal-200 md:col-span-2">
+                <div className="flex gap-3 md:gap-4">
+                  <Clock className="w-5 md:w-6 h-5 md:h-6 text-teal-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-bold text-slate-900 mb-3">Business Hours</h3>
-                    <p className="text-slate-600">Monday - Friday: 8am - 6pm</p>
-                    <p className="text-slate-600">Saturday: 9am - 5pm</p>
-                    <p className="text-slate-600">Sunday: Closed</p>
+                    <h3 className="font-bold text-slate-900 mb-2 md:mb-3 text-base md:text-lg">Business Hours</h3>
+                    <p className="text-sm md:text-base text-slate-600">Monday - Sunday: Open 24 hours</p>
                   </div>
                 </div>
               </div>

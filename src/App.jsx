@@ -7,7 +7,7 @@ import ServicesPage from './pages/ServicesPage';
 import ServiceDetailPage from './pages/ServiceDetailPage';
 import HelpPage from './pages/HelpPage';
 import Contact from './pages/Contact';
-import Order from './pages/Order';
+import OrderSimple from './pages/OrderSimple';
 import './App.css';
 
 const AppContent = () => {
@@ -38,7 +38,7 @@ const AppContent = () => {
         <Route path="/services/:serviceName" element={<ServiceDetailPage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/order" element={<Order />} />
+        <Route path="/order" element={<OrderSimple />} />
       </Routes>
     </div>
   );

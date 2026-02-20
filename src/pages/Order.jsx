@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Calendar, Clock, MapPin, Users, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import emailjs from 'emailjs-com';
+
+// Initialize EmailJS - Replace with your actual Public Key from EmailJS
+const EMAILJS_PUBLIC_KEY = 'q6AlmW8UNfBiLaHXm';
+const EMAILJS_SERVICE_ID = 'service_ohpcbkf';
+const EMAILJS_BOOKING_TEMPLATE_ID = 'template_xa949yt';
+
+// Initialize emailjs on component mount
+emailjs.init(EMAILJS_PUBLIC_KEY);
 
 const Order = () => {
   const [visibleElements, setVisibleElements] = useState({});
@@ -59,7 +68,12 @@ const Order = () => {
     if (step < 3) {
       setStep(step + 1);
     } else if (step === 3) {
-      // Submit the form
+      // Validate form data
+      if (!formData.service || !formData.date || !formData.time || !formData.name || !formData.email || !formData.phone || !formData.address) {
+        setErrorMessage('Please fill in all required fields.');
+        return;
+      }
+
       setLoading(true);
       setErrorMessage('');
       setSuccessMessage('');
@@ -67,80 +81,55 @@ const Order = () => {
       try {
         const selectedService = services.find(s => s.id === formData.service);
         
-        // Prepare email content
-        const emailContent = `
-New Booking Request from Thistle Prime Cleaning Website
+        // Prepare email template variables
+        const templateParams = {
+          to_email: formData.email,
+          admin_email: 'thistleprimecleaning@gmail.com',
+          customer_name: formData.name,
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          service_name: selectedService?.name || 'Not selected',
+          booking_date: new Date(formData.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
+          booking_time: formData.time,
+          property_type: formData.propertyType,
+          bedrooms: formData.bedrooms,
+          bathrooms: formData.bathrooms,
+          address: formData.address,
+          special_requests: formData.specialRequests || 'None',
+          booking_reference: `THISTLE-${Date.now()}`,
+        };
 
-CUSTOMER DETAILS:
-Name: ${formData.name}
-Email: ${formData.email}
-Phone: ${formData.phone}
-Address: ${formData.address}
+        // Send confirmation email to customer
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_BOOKING_TEMPLATE_ID,
+          templateParams,
+          EMAILJS_PUBLIC_KEY
+        );
 
-BOOKING DETAILS:
-Service: ${selectedService?.name || 'Not selected'}
-Date: ${new Date(formData.date).toLocaleDateString()}
-Time: ${formData.time}
-Property Type: ${formData.propertyType}
-Bedrooms: ${formData.bedrooms}
-Bathrooms: ${formData.bathrooms}
-
-SPECIAL REQUESTS:
-${formData.specialRequests || 'None'}
-
----
-Please reply to: ${formData.email}
-Phone: ${formData.phone}
-`;
-
-        // Send email via Formspree (free service)
-        const response = await fetch('https://formspree.io/f/xnjbzely', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            service: selectedService?.name,
-            date: formData.date,
-            time: formData.time,
-            propertyType: formData.propertyType,
-            bedrooms: formData.bedrooms,
-            bathrooms: formData.bathrooms,
-            address: formData.address,
-            specialRequests: formData.specialRequests,
-            message: emailContent,
-            _redirect: false,
-          }),
-        });
-
-        if (response.ok) {
-          setSuccessMessage('✅ Booking submitted successfully! We will contact you shortly.');
-          // Reset form after 2 seconds
-          setTimeout(() => {
-            setFormData({
-              service: '',
-              date: '',
-              time: '',
-              propertyType: '',
-              bedrooms: '',
-              bathrooms: '',
-              name: '',
-              email: '',
-              phone: '',
-              address: '',
-              specialRequests: '',
-            });
-            setStep(1);
-          }, 2000);
-        } else {
-          setErrorMessage('Failed to submit booking. Please try again or call us directly.');
-        }
+        setSuccessMessage('✅ Booking submitted successfully! A confirmation email has been sent to ' + formData.email);
+        
+        // Reset form after 3 seconds
+        setTimeout(() => {
+          setFormData({
+            service: '',
+            date: '',
+            time: '',
+            propertyType: '',
+            bedrooms: '',
+            bathrooms: '',
+            name: '',
+            email: '',
+            phone: '',
+            address: '',
+            specialRequests: '',
+          });
+          setStep(1);
+          setSuccessMessage('');
+        }, 3000);
       } catch (error) {
-        setErrorMessage('Error submitting booking. Please call us at +44 7440 620492 to complete your booking.');
+        console.error('Email send failed:', error);
+        setErrorMessage('Error submitting booking. Please try again or call us at +44 7440 620492.');
       } finally {
         setLoading(false);
       }
@@ -259,43 +248,48 @@ Phone: ${formData.phone}
               <div
                 id="step1-section"
                 data-animate="true"
-                className="transition-all duration-1000"
+                className="transition-all duration-500"
                 style={{
-                  transform: visibleElements['step1-section'] ? 'translateY(0)' : 'translateY(20px)',
-                  opacity: visibleElements['step1-section'] ? 1 : 0,
+                  transform: 'translateY(0)',
+                  opacity: 1,
                 }}
               >
                 <h2 className="text-3xl font-bold mb-8 text-slate-900">Select Your Service</h2>
                 <div className="mb-8">
-                  <label className="block text-sm font-semibold text-slate-900 mb-3">Choose a Service</label>
-                  <select
-                    name="service"
-                    value={formData.service}
-                    onChange={handleChange}
-                    size={7}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900 font-medium cursor-pointer"
-                  >
-                    <option value="">-- Select a Service --</option>
-                    <option value="regular-domestic-cleaning">Regular Domestic Cleaning - £15–£28/hr</option>
-                    <option value="one-off-deep-cleaning">One-Off Deep Cleaning - £90–£180</option>
-                    <option value="end-of-tenancy-cleaning">End of Tenancy Cleaning - £120–£430+</option>
-                    <option value="office-cleaning">Office Cleaning - £16–£35+/hr</option>
-                    <option value="window-cleaning">Window Cleaning - Varies</option>
-                    <option value="carpet-upholstery-cleaning">Carpet & Upholstery Cleaning - Varies</option>
-                  </select>
+                  <label className="block text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <span className="text-red-500">*</span>Choose a Cleaning Service
+                  </label>
+                  <div className="grid grid-cols-1 gap-3">
+                    {services.map((service) => (
+                      <label key={service.id} className="flex items-center p-4 border-2 border-slate-300 rounded-lg cursor-pointer hover:bg-teal-50 hover:border-teal-400 transition-all duration-200" style={{borderColor: formData.service === service.id ? '#14b8a6' : '#cbd5e1', backgroundColor: formData.service === service.id ? '#f0fdfa' : 'transparent'}}>
+                        <input
+                          type="radio"
+                          name="service"
+                          value={service.id}
+                          checked={formData.service === service.id}
+                          onChange={handleChange}
+                          className="w-4 h-4 text-teal-600 cursor-pointer"
+                        />
+                        <div className="ml-3 flex-1">
+                          <p className="font-semibold text-slate-900">{service.name}</p>
+                          <p className="text-sm text-slate-600">{service.price}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
                 </div>
                 <button
                   type="submit"
                   disabled={!formData.service || loading}
-                  className="w-full px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+                  className="w-full px-6 py-4 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 text-lg"
                 >
                   {loading ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Submitting...
+                      Processing...
                     </>
                   ) : (
-                    'Continue to Schedule'
+                    'Continue to Schedule →'
                   )}
                 </button>
               </div>
@@ -306,10 +300,10 @@ Phone: ${formData.phone}
               <div
                 id="step2-section"
                 data-animate="true"
-                className="transition-all duration-1000"
+                className="transition-all duration-500"
                 style={{
-                  transform: visibleElements['step2-section'] ? 'translateY(0)' : 'translateY(20px)',
-                  opacity: visibleElements['step2-section'] ? 1 : 0,
+                  transform: 'translateY(0)',
+                  opacity: 1,
                 }}
               >
                 <h2 className="text-3xl font-bold mb-8 text-slate-900">Schedule Your Cleaning</h2>
@@ -324,7 +318,7 @@ Phone: ${formData.phone}
                   <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-2 flex items-center gap-2">
                       <Calendar size={18} className="text-teal-600" />
-                      Preferred Date
+                      Preferred Date <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
@@ -332,47 +326,50 @@ Phone: ${formData.phone}
                       value={formData.date}
                       onChange={handleChange}
                       min={getTodayDate()}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-2 flex items-center gap-2">
                       <Clock size={18} className="text-teal-600" />
-                      Preferred Time
+                      Preferred Time <span className="text-red-500">*</span>
                     </label>
                     <select
                       name="time"
                       value={formData.time}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900 font-medium"
                     >
-                      <option value="">Select a time</option>
-                      <option value="08:00-10:00">8:00am - 10:00am</option>
-                      <option value="10:00-12:00">10:00am - 12:00pm</option>
-                      <option value="12:00-14:00">12:00pm - 2:00pm</option>
-                      <option value="14:00-16:00">2:00pm - 4:00pm</option>
-                      <option value="16:00-18:00">4:00pm - 6:00pm</option>
+                      <option value="">Select a time slot</option>
+                      <option value="08:00-10:00">08:00 - 10:00</option>
+                      <option value="10:00-12:00">10:00 - 12:00</option>
+                      <option value="12:00-14:00">12:00 - 14:00</option>
+                      <option value="14:00-16:00">14:00 - 16:00</option>
+                      <option value="16:00-18:00">16:00 - 18:00</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-2 flex items-center gap-2">
                       <Users size={18} className="text-teal-600" />
-                      Property Type
+                      Property Type <span className="text-red-500">*</span>
                     </label>
                     <select
                       name="propertyType"
                       value={formData.propertyType}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900 font-medium"
                     >
                       <option value="">Select property type</option>
-                      <option value="flat">Flat</option>
-                      <option value="house">House</option>
-                      <option value="bungalow">Bungalow</option>
-                      <option value="office">Office</option>
-                      <option value="commercial">Commercial</option>
+                      <option value="flat">🏢 Flat / Apartment</option>
+                      <option value="house">🏠 House</option>
+                      <option value="bungalow">🏡 Bungalow</option>
+                      <option value="office">💼 Office</option>
+                      <option value="commercial">🏢 Commercial</option>
                     </select>
                   </div>
 
@@ -385,8 +382,8 @@ Phone: ${formData.phone}
                         value={formData.bedrooms}
                         onChange={handleChange}
                         min="0"
-                        placeholder="e.g., 2"
-                        className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors"
+                        placeholder="0"
+                        className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900 font-medium"
                       />
                     </div>
                     <div>
@@ -397,26 +394,26 @@ Phone: ${formData.phone}
                         value={formData.bathrooms}
                         onChange={handleChange}
                         min="0"
-                        placeholder="e.g., 1"
-                        className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors"
+                        placeholder="0"
+                        className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900 font-medium"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-4 mt-8">
+                <div className="flex gap-4 mt-10">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
                     disabled={loading}
-                    className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-900 font-semibold rounded-lg hover:bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed transition-all duration-300"
+                    className="flex-1 px-6 py-4 border-2 border-slate-300 text-slate-900 font-semibold rounded-lg hover:bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed transition-all duration-300"
                   >
-                    Back
+                    ← Back
                   </button>
                   <button
                     type="submit"
                     disabled={!formData.date || !formData.time || !formData.propertyType || loading}
-                    className="flex-1 px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-4 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 text-lg"
                   >
                     {loading ? (
                       <>
@@ -424,7 +421,7 @@ Phone: ${formData.phone}
                         Processing...
                       </>
                     ) : (
-                      'Continue to Details'
+                      'Continue to Details →'
                     )}
                   </button>
                 </div>
@@ -436,140 +433,143 @@ Phone: ${formData.phone}
               <div
                 id="step3-section"
                 data-animate="true"
-                className="transition-all duration-1000"
+                className="transition-all duration-500"
                 style={{
-                  transform: visibleElements['step3-section'] ? 'translateY(0)' : 'translateY(20px)',
-                  opacity: visibleElements['step3-section'] ? 1 : 0,
+                  transform: 'translateY(0)',
+                  opacity: 1,
                 }}
               >
                 <h2 className="text-3xl font-bold mb-8 text-slate-900">Your Details</h2>
 
                 {/* Booking Summary */}
-                <div className="p-6 bg-slate-50 border border-slate-200 rounded-lg mb-8">
-                  <h3 className="font-bold text-slate-900 mb-4">Booking Summary</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-slate-600 uppercase mb-2">Service Type</p>
-                      <select
-                        name="service"
-                        value={formData.service}
-                        onChange={handleChange}
-                        size={7}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900 font-medium cursor-pointer text-sm"
-                      >
-                        <option value="">-- Select a Service --</option>
-                        <option value="regular-domestic-cleaning">Regular Domestic Cleaning - £15–£28/hr</option>
-                        <option value="one-off-deep-cleaning">One-Off Deep Cleaning - £90–£180</option>
-                        <option value="end-of-tenancy-cleaning">End of Tenancy Cleaning - £120–£430+</option>
-                        <option value="office-cleaning">Office Cleaning - £16–£35+/hr</option>
-                        <option value="window-cleaning">Window Cleaning - Varies</option>
-                        <option value="carpet-upholstery-cleaning">Carpet & Upholstery Cleaning - Varies</option>
-                      </select>
+                <div className="p-6 bg-gradient-to-br from-teal-50 to-blue-50 border-2 border-teal-200 rounded-lg mb-8 shadow-sm">
+                  <h3 className="font-bold text-lg text-slate-900 mb-6 flex items-center gap-2">
+                    <CheckCircle size={20} className="text-teal-600" />
+                    Booking Summary
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Service</p>
+                      <p className="text-base font-semibold text-slate-900">{getSelectedService()?.name || 'Not selected'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-600 uppercase mb-1">Date</p>
-                      <p className="text-sm text-slate-900 font-medium">{new Date(formData.date).toLocaleDateString()}</p>
+                      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Date</p>
+                      <p className="text-base font-semibold text-slate-900">{new Date(formData.date).toLocaleDateString('en-GB', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-600 uppercase mb-1">Time</p>
-                      <p className="text-sm text-slate-900 font-medium">{formData.time}</p>
+                      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Time</p>
+                      <p className="text-base font-semibold text-slate-900">{formData.time}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-600 uppercase mb-1">Property</p>
-                      <p className="text-sm text-slate-900 font-medium">{formData.propertyType} ({formData.bedrooms} bed, {formData.bathrooms} bath)</p>
+                      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Property Type</p>
+                      <p className="text-base font-semibold text-slate-900 capitalize">{formData.propertyType}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Bedrooms/Bathrooms</p>
+                      <p className="text-base font-semibold text-slate-900">{formData.bedrooms || '0'} bd / {formData.bathrooms || '0'} ba</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">Full Name</label>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="Your name"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors"
+                      placeholder="Your full name"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">Email</label>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="your@email.com"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors"
+                      placeholder="your.email@example.com"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-900 mb-2">Phone</label>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="tel"
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="+44 7440 620492"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-2 flex items-center gap-2">
                       <MapPin size={18} className="text-teal-600" />
-                      Property Address
+                      Property Address <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
-                      placeholder="Your property address"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors"
+                      placeholder="123 Main Street, London, UK"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-900 mb-2 flex items-center gap-2">
                       <FileText size={18} className="text-teal-600" />
-                      Special Requests
+                      Special Requests or Notes
                     </label>
                     <textarea
                       name="specialRequests"
                       value={formData.specialRequests}
                       onChange={handleChange}
-                      placeholder="Any special requests or areas of concern..."
+                      placeholder="Tell us about any special requests, allergies, or areas that need special attention..."
                       rows="4"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-600 focus:outline-none transition-colors resize-none"
+                      className="w-full px-4 py-3 rounded-lg border-2 border-slate-300 focus:border-teal-600 focus:outline-none transition-colors bg-white text-slate-900 resize-none"
                     ></textarea>
                   </div>
                 </div>
 
-                <div className="flex gap-4 mt-8">
+                <div className="flex gap-4 mt-10">
                   <button
                     type="button"
                     onClick={() => setStep(2)}
                     disabled={loading}
-                    className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-900 font-semibold rounded-lg hover:bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed transition-all duration-300"
+                    className="flex-1 px-6 py-4 border-2 border-slate-300 text-slate-900 font-semibold rounded-lg hover:bg-slate-50 disabled:bg-slate-100 disabled:cursor-not-allowed transition-all duration-300"
                   >
-                    Back
+                    ← Back
                   </button>
                   <button
                     type="submit"
                     disabled={!formData.name || !formData.email || !formData.phone || !formData.address || loading}
-                    className="flex-1 px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-4 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 text-lg"
                   >
                     {loading ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Submitting Booking...
+                        Submitting...
                       </>
                     ) : (
-                      'Complete Booking'
+                      '✓ Complete Booking'
                     )}
                   </button>
                 </div>
