@@ -95,8 +95,17 @@ export default function Navbar({ currentPage = 'home', onNavigate = () => {} }) 
 
           {/* Center Logo */}
           <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
-            <h1 className="text-2xl font-bold text-slate-900">Thistle Prime</h1>
-            <p className="text-xs tracking-widest font-semibold text-teal-600">CLEANING</p>
+            <button
+              onClick={() => window.location.href = '/'}
+              aria-label="Home"
+              className="hover:opacity-80 transition-opacity"
+            >
+              <img 
+                src="/logo.png" 
+                alt="Thistle Prime Cleaning Logo" 
+                className="h-20 md:h-24 object-contain"
+              />
+            </button>
           </div>
 
           {/* Right Navigation */}
@@ -128,9 +137,17 @@ export default function Navbar({ currentPage = 'home', onNavigate = () => {} }) 
         aria-label="Mobile navigation"
       >
         <div className="h-full px-4 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-slate-900">
-            Thistle Prime
-          </h1>
+          <button
+            onClick={() => window.location.href = '/'}
+            aria-label="Home"
+            className="hover:opacity-80 transition-opacity"
+          >
+            <img 
+              src="/logo.png" 
+              alt="Thistle Prime Cleaning Logo" 
+              className="h-12 object-contain"
+            />
+          </button>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="text-slate-900 hover:text-teal-600 transition-colors duration-300"
