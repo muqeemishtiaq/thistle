@@ -161,7 +161,8 @@ const HelpPage = () => {
               <MessageSquare className="w-12 h-12 text-teal-600 mb-4" />
               <h3 className="text-xl font-bold text-slate-900 mb-2">Response Time</h3>
               <p className="text-slate-600 mb-3">We typically respond within 1 hour</p>
-              <p className="text-teal-600 font-semibold">Mon-Sun, 8am-9pm</p>
+              <p className="text-teal-600 font-semibold">Monday-Sunday: Open 24 hours
+              </p>
             </div>
           </div>
         </div>
