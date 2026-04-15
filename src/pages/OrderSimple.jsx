@@ -10,7 +10,7 @@ const OrderSimple = () => {
   const [formData, setFormData] = useState({
     service: '',
     date: '',
-    time: '', // Updated to single string "HH:mm"
+    time: '',
     name: '',
     email: '',
     phone: '',
@@ -41,7 +41,8 @@ const OrderSimple = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    // Validation
     if (!formData.service || !formData.date || !formData.time || !formData.name || !formData.email || !formData.phone || !formData.address) {
       setErrorMessage('Please fill in all fields.');
       return;
@@ -60,7 +61,7 @@ const OrderSimple = () => {
         body: JSON.stringify({
           Service: selectedService?.name || 'Service',
           Date: new Date(formData.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
-          Time: formData.time, // Sending the 24h string
+          Time: formData.time,
           Name: formData.name,
           Email: formData.email,
           Phone: formData.phone,
@@ -69,19 +70,25 @@ const OrderSimple = () => {
       });
 
       if (response.ok) {
+        // ✅ TRACK CONVERSION
+        if (typeof window.gtag_report_conversion === "function") {
+          window.gtag_report_conversion();
+        }
+
         setSuccessMessage(`✅ Booking submitted successfully! We will contact you within 1 hour at ${formData.phone} to confirm.`);
-        setTimeout(() => {
-          setFormData({
-            service: '',
-            date: '',
-            time: '',
-            name: '',
-            email: '',
-            phone: '',
-            address: '',
-          });
-          setSuccessMessage('');
-        }, 5000);
+        
+        // Reset form
+        setFormData({
+          service: '',
+          date: '',
+          time: '',
+          name: '',
+          email: '',
+          phone: '',
+          address: '',
+        });
+
+        setTimeout(() => setSuccessMessage(''), 5000);
       } else {
         throw new Error('Failed to submit booking.');
       }
@@ -120,7 +127,6 @@ const OrderSimple = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Service Selection */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-slate-700">
                 Service <span className="text-red-500">*</span>
@@ -139,9 +145,7 @@ const OrderSimple = () => {
               </select>
             </div>
 
-            {/* Date and Time Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {/* Date */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                   <Calendar size={18} className="text-teal-600" />
@@ -158,7 +162,6 @@ const OrderSimple = () => {
                 />
               </div>
 
-              {/* Time */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                   <Clock size={18} className="text-teal-600" />
@@ -191,7 +194,6 @@ const OrderSimple = () => {
               </div>
             </div>
 
-            {/* Name */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-slate-700">
                 Full Name <span className="text-red-500">*</span>
@@ -207,7 +209,6 @@ const OrderSimple = () => {
               />
             </div>
 
-            {/* Email and Phone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-slate-700">
@@ -239,7 +240,6 @@ const OrderSimple = () => {
               </div>
             </div>
 
-            {/* Address */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <MapPin size={18} className="text-teal-600" />
@@ -265,7 +265,6 @@ const OrderSimple = () => {
             </button>
           </form>
 
-          {/* Footer Info */}
           <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm text-slate-500">
             <p className="font-bold text-slate-700 mb-1">Need help?</p>
             <p>Call: <a href="tel:+447440620492" className="text-teal-600 font-bold hover:underline">+44 7440 620492</a></p>
@@ -274,7 +273,6 @@ const OrderSimple = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="py-8 bg-slate-900 text-white text-center">
         <p className="text-slate-400 text-sm">&copy; 2026 Thistle Prime Cleaning. All rights reserved.</p>
       </footer>

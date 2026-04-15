@@ -7,7 +7,7 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2781106760476481"
      crossorigin="anonymous"></script>
 
-    <!-- Google Ads (gtag.js) -->
+    <!-- Google Ads Global Tag -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18080192718"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -15,6 +15,24 @@
       gtag('js', new Date());
 
       gtag('config', 'AW-18080192718');
+    </script>
+
+    <!-- Google Ads Conversion Tracking Function -->
+    <script>
+      function gtag_report_conversion(url) {
+        var callback = function () {
+          if (typeof(url) != 'undefined') {
+            window.location = url;
+          }
+        };
+
+        gtag('event', 'conversion', {
+          'send_to': 'AW-18080192718/yaWHCO2YlJocEM6xp61D',
+          'event_callback': callback
+        });
+
+        return false;
+      }
     </script>
 
     <link rel="icon" type="image/svg+xml" href="logo.png" />
