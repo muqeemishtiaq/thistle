@@ -1,21 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Calendar, Clock, MapPin, Users, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import emailjs from 'emailjs-com';
 
-// Initialize EmailJS - Replace with your actual Public Key from EmailJS
 const EMAILJS_PUBLIC_KEY = 'q6AlmW8UNfBiLaHXm';
 const EMAILJS_SERVICE_ID = 'service_ohpcbkf';
 const EMAILJS_BOOKING_TEMPLATE_ID = 'template_xa949yt';
 
-// Initialize emailjs on component mount
-emailjs.init(EMAILJS_PUBLIC_KEY);
-
 const Order = () => {
-  const [visibleElements, setVisibleElements] = useState({});
+  const initialized = useRef(false);
+
   const [step, setStep] = useState(1);
+  const [visibleElements, setVisibleElements] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
   const [formData, setFormData] = useState({
     service: '',
     date: '',
@@ -30,28 +29,50 @@ const Order = () => {
     specialRequests: '',
   });
 
+  // EmailJS init (ONLY ONCE)
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setVisibleElements((prev) => ({
-            ...prev,
-            [entry.target.id]: true,
-          }));
-        }
-      });
-    }, {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px',
-    });
-
-    document.querySelectorAll('[data-animate]').forEach((el) => {
-      if (!el.id) el.id = `animate-${Math.random().toString(36).substr(2, 9)}`;
-      observer.observe(el);
-    });
-
-    return () => observer.disconnect();
+    if (!initialized.current) {
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+      initialized.current = true;
+    }
   }, []);
+
+  // scroll on step change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
+
+  // animation observer
+  useEffect(() => {
+  const observer = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        setVisibleElements((prev) => ({
+          ...prev,
+          [entry.target.id]: true,
+        }));
+      }
+    });
+  },
+  {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px',
+  }
+);
+
+  const elements = document.querySelectorAll('[data-animate]');
+
+  elements.forEach((el) => {
+    if (!el.id) el.id = `animate-${Math.random().toString(36).slice(2, 9)}`;
+    observer.observe(el);
+  });
+
+  return () => {
+    elements.forEach((el) => observer.unobserve(el));
+    observer.disconnect();
+  };
+}, []);
 
   const services = [
     { id: 'regular-domestic-cleaning', name: 'Regular Domestic Cleaning', price: '£15–£28/hr' },
@@ -61,13 +82,28 @@ const Order = () => {
     { id: 'window-cleaning', name: 'Window Cleaning', price: 'Varies' },
     { id: 'carpet-upholstery-cleaning', name: 'Carpet & Upholstery Cleaning', price: 'Varies' },
   ];
-
+  const getServiceValue = (serviceId) => {
+    switch (serviceId) {
+      case 'one-off-deep-cleaning': return 120;
+      case 'end-of-tenancy-cleaning': return 200;
+      case 'office-cleaning': return 150;
+      default: return 100;
+    }
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    if (step === 2 && (!formData.date || !formData.time || !formData.propertyType)) {
+  setErrorMessage('Please complete schedule details.');
+  return;
+}
+if (step === 3 && !/^\+?[0-9\s-]{7,15}$/.test(formData.phone)) {
+  setErrorMessage('Please enter a valid phone number.');
+  return;
+}
     if (step < 3) {
-      setStep(step + 1);
+      setStep(prev => prev + 1);    
     } else if (step === 3) {
+
       // Validate form data
       if (!formData.service || !formData.date || !formData.time || !formData.name || !formData.email || !formData.phone || !formData.address) {
         setErrorMessage('Please fill in all required fields.');
@@ -80,35 +116,48 @@ const Order = () => {
 
       try {
         const selectedService = services.find(s => s.id === formData.service);
-        
-        // Prepare email template variables
-        const templateParams = {
-          to_email: formData.email,
-          admin_email: 'thistleprimecleaning@gmail.com',
-          customer_name: formData.name,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
-          service_name: selectedService?.name || 'Not selected',
-          booking_date: new Date(formData.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
-          booking_time: formData.time,
-          property_type: formData.propertyType,
-          bedrooms: formData.bedrooms,
-          bathrooms: formData.bathrooms,
-          address: formData.address,
-          special_requests: formData.specialRequests || 'None',
-          booking_reference: `THISTLE-${Date.now()}`,
-        };
 
-        // Send confirmation email to customer
-        await emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_BOOKING_TEMPLATE_ID,
-          templateParams,
-          EMAILJS_PUBLIC_KEY
-        );
+      const transactionId = `THISTLE-${Date.now()}`;
 
-        setSuccessMessage('✅ Booking submitted successfully! A confirmation email has been sent to ' + formData.email);
-        
+const templateParams = {
+  to_email: formData.email,
+  admin_email: 'thistleprimecleaning@gmail.com',
+  customer_name: formData.name,
+  customer_email: formData.email,
+  customer_phone: formData.phone,
+  service_name: selectedService?.name || 'Not selected',
+  booking_date: new Date(formData.date).toLocaleDateString('en-GB', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }),
+  booking_time: formData.time,
+  property_type: formData.propertyType,
+  bedrooms: formData.bedrooms,
+  bathrooms: formData.bathrooms,
+  address: formData.address,
+  special_requests: formData.specialRequests || 'None',
+  booking_reference: transactionId,
+};
+
+// Send email
+await emailjs.send(
+  EMAILJS_SERVICE_ID,
+  EMAILJS_BOOKING_TEMPLATE_ID,
+  templateParams,
+  EMAILJS_PUBLIC_KEY
+);
+
+// Google Ads Conversion
+if (window.gtag) {
+  window.gtag('event', 'conversion', {
+    send_to: 'AW-18080192718/tqJOCInurpwcEM6xp61D',
+    value: getServiceValue(formData.service),
+    currency: 'GBP',
+    transaction_id: transactionId
+  });
+}
+setSuccessMessage(`✅ Booking confirmed! Ref: ${transactionId}`);
         // Reset form after 3 seconds
         setTimeout(() => {
           setFormData({
@@ -136,14 +185,21 @@ const Order = () => {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+const handleChange = (e) => {
+  if (loading) return;
 
+  const { name, value } = e.target;
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+
+  // clear old error first
+  setErrorMessage("");
+
+  // phone validation
+  
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -191,11 +247,10 @@ const Order = () => {
             {[1, 2, 3].map((stepNum) => (
               <div key={stepNum} className="flex items-center flex-1">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${
-                    stepNum <= step
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${stepNum <= step
                       ? 'bg-teal-600 text-white'
                       : 'bg-slate-200 text-slate-600'
-                  }`}
+                    }`}
                 >
                   {stepNum < step ? <CheckCircle size={24} /> : stepNum}
                 </div>
@@ -206,9 +261,8 @@ const Order = () => {
                 </div>
                 {stepNum < 3 && (
                   <div
-                    className={`flex-1 h-1 mx-4 transition-all duration-300 ${
-                      stepNum < step ? 'bg-teal-600' : 'bg-slate-200'
-                    }`}
+                    className={`flex-1 h-1 mx-4 transition-all duration-300 ${stepNum < step ? 'bg-teal-600' : 'bg-slate-200'
+                      }`}
                   ></div>
                 )}
               </div>
@@ -261,7 +315,7 @@ const Order = () => {
                   </label>
                   <div className="grid grid-cols-1 gap-3">
                     {services.map((service) => (
-                      <label key={service.id} className="flex items-center p-4 border-2 border-slate-300 rounded-lg cursor-pointer hover:bg-teal-50 hover:border-teal-400 transition-all duration-200" style={{borderColor: formData.service === service.id ? '#14b8a6' : '#cbd5e1', backgroundColor: formData.service === service.id ? '#f0fdfa' : 'transparent'}}>
+                      <label key={service.id} className="flex items-center p-4 border-2 border-slate-300 rounded-lg cursor-pointer hover:bg-teal-50 hover:border-teal-400 transition-all duration-200" style={{ borderColor: formData.service === service.id ? '#14b8a6' : '#cbd5e1', backgroundColor: formData.service === service.id ? '#f0fdfa' : 'transparent' }}>
                         <input
                           type="radio"
                           name="service"
@@ -592,5 +646,5 @@ const Order = () => {
     </div>
   );
 };
-
+};
 export default Order;
