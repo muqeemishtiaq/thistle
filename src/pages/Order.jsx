@@ -157,7 +157,7 @@ if (window.gtag) {
     transaction_id: transactionId
   });
 }
-setSuccessMessage(`✅ Booking confirmed! Ref: ${transactionId}`);
+setSuccessMessage(`✅ Booking confirmed!`);
         // Reset form after 3 seconds
         setTimeout(() => {
           setFormData({
