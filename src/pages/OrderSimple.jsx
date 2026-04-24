@@ -75,7 +75,7 @@ const OrderSimple = () => {
           window.gtag_report_conversion();
         }
 
-        setSuccessMessage(`✅ Booking submitted successfully! We will contact you within 1 hour at ${formData.phone} to confirm.`);
+        setSuccessMessage(`✅ Booking submitted successfully!`);
         
         // Reset form
         setFormData({
